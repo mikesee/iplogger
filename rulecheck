@@ -40,27 +40,19 @@ intervalago=$(($now - 3600));
 
 # function get_db()
 # downloads and saves a ipdb.txt file
-get_db() {
-	wget --quiet --output-document=$dbfile "$dburl";
-};
+get_db() { wget --quiet --output-document=$dbfile "$dburl"; };
 
 # function add_rule()
 # adds a firewall rule to iptables
-add_rule() {
-	/sbin/iptables -I INPUT -s "$1/32" -m comment --comment "SSH Malicious Intent $randstr" -j DROP;
-};
+add_rule() { /sbin/iptables -I INPUT -s "$1/32" -m comment --comment "SSH Malicious Intent $randstr" -j DROP; };
 
 # function del_rule()
 # deletes a firewall rule from iptables
-del_rule() {
-	/sbin/iptables -D INPUT "$1";
-};
+del_rule() { /sbin/iptables -D INPUT "$1"; };
 
 # function populate_list()
 # generates the rules list
-populate_list() {
-	/sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
-};
+populate_list() { /sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist"; };
 
 # START
 # START
