@@ -17,7 +17,7 @@ rulesfilebefore='iptablerules_before.txt';
 rulesfileafter='iptablerules_after.txt';
 
 # url that contains one-per-line list of IPs
-dburl='http://dev.xeqtion.net/ipdb.php';
+dburl='http://example.com/ipdb.txt';
 
 # regular expression for IPv4's
 ipregex='([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})';
@@ -44,6 +44,17 @@ get_db() {
 	wget --quiet --output-document=$dbfile "$dburl";
 };
 
+# function add_rule()
+# adds a firewall rule to iptables
+add_rule() {
+	/sbin/iptables -I INPUT -s "$1/32" -m comment --comment "SSH Malicious Intent $randstr" -j DROP;
+};
+
+# function del_rule()
+# deletes a firewall rule from iptables
+del_rule() {
+	/sbin/iptables -D INPUT "$1";
+};
 
 # START
 # START
@@ -88,16 +99,14 @@ while read -r i; do
                 do
 						# bye bye
                         echo "/sbin/iptables -D INPUT ${p}";
-                        /sbin/iptables -D INPUT "${p}";
+                        del_rule "${p}";
                 done
 				
 				# add a new rule for this run because we just burned the old one(s)
-                echo "/sbin/iptables -I INPUT -s \"${i}\" -m comment --comment \"SSH Malicious Intent $randstr\" -j DROP;";
-                /sbin/iptables -I INPUT -s "${i}/32" -m comment --comment "SSH Malicious Intent $randstr" -j DROP;
+				add_rule "${i}"
         else
 				# add a new rule since there wasn't any
-                echo "/sbin/iptables -I INPUT -s \"${i}\" -m comment --comment \"SSH Malicious Intent $randstr\" -j DROP;";
-                /sbin/iptables -I INPUT -s "${i}/32" -m comment --comment "SSH Malicious Intent $randstr" -j DROP;
+				add_rule "${i}"
         fi
 		# refresh the rules so line numbers are updated accordingly..
         /sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
