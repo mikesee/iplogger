@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+# get file to search
+filesearch='/var/log/secure';
+
+# file name for ip database list
+dbfile='database.txt';
+
+# file name for attackers
+attackers='attackers.txt';
+
+# file name for unique new attackers
+newfordb='newattackers.txt';
+
+# file name for rules backup
+rulesfilebefore='iptablerules_before.txt';
+rulesfileafter='iptablerules_after.txt';
+
+# url that contains one-per-line list of IPs
+dburl='http://dev.xeqtion.net/ipdb.php';
+
+# regular expression for IPv4's
+ipregex='([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})';
+
+# regex bits for /var/log/secure
+fpf='Failed password for';
+userlist='invalid user|root';
+
+# tmp file name for current IP rules
+iplist='/tmp/cleaningiplist';
+
+# generate random string for this run of script
+randstr=$(echo $RANDOM | md5sum | awk '{print $1;}');
+
+# now, in seconds
+now=$(date +%s);
+
+# an hour ago..
+intervalago=${$now \- 3600};
+
+# function get_db()
+# downloads and saves a ipdb.txt file
+get_db() {
+	wget --quiet --output-document=$dbfile "$dburl";
+};
+
+
+# START
+# START
+# START
+# save iptables rules to file incase we break something this run
+/sbin/iptables-save > "${rulesfilebefore}" 2>&1;
+
+
+# begin script, generate the list of current IPs with rules
+/sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
+
+# generate the new attackers by grepping /var/log/secure for: "Failed password for (invalid user|root)"
+grep -P "${fpf} (?:${userlist})" "${filesearch}" | grep -oP "${ipregex}" | sort -u > "${attackers}";
+
+# got a db? if not, get one!
+if [ ! -e "${dbfile}" ]; then
+        echo 'no file, create it';
+        get_db;
+fi
+
+# is it old and dated?  refresh it!
+moddate=$(stat -c %Y $dbfile);
+if [ "${$moddate \< $intervalago}" == 1 ]; then
+        echo 'old file, make new one';
+        get_db;
+fi
+
+# save only the new attackers that are not in the DB already
+awk 'NR==FNR {d[$0];next} ! ($0 in d) {print}' "${dbfile}" "${attackers}" > "${newfordb}";
+
+# loop through the new attackers, and delete any old rules and add a new one
+# todo: improve efficiency at all?
+while read -r i; do
+		# search the rules for the IP, get all lines
+        linevalue=$(grep "$i" "$iplist" | awk '{print $1;}' | sort -u );
+		
+		# if the line isn't null
+		# todo:  better variable checking, for empty string and shit too..
+        if [ -n "$linevalue" ] ; then
+				# foreach line with a number, delete that rule
+                for p in $(echo "${linevalue}" | tr " " "\n") ;
+                do
+						# bye bye
+                        echo "/sbin/iptables -D INPUT ${p}";
+                        /sbin/iptables -D INPUT "${p}";
+                done
+				
+				# add a new rule for this run because we just burned the old one(s)
+                echo "/sbin/iptables -I INPUT -s \"${i}\" -m comment --comment \"SSH Malicious Intent $randstr\" -j DROP;";
+                /sbin/iptables -I INPUT -s "${i}/32" -m comment --comment "SSH Malicious Intent $randstr" -j DROP;
+        else
+				# add a new rule since there wasn't any
+                echo "/sbin/iptables -I INPUT -s \"${i}\" -m comment --comment \"SSH Malicious Intent $randstr\" -j DROP;";
+                /sbin/iptables -I INPUT -s "${i}/32" -m comment --comment "SSH Malicious Intent $randstr" -j DROP;
+        fi
+		# refresh the rules so line numbers are updated accordingly..
+        /sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
+done < "${newfordb}";
+# get geo IP information and delete list files
+php get_geos_new.php && rm -f "${attackers}" "${iplist}";
+
+#refresh $dbfile
+get_db;
+
+# save iptables rules to file incase we broke something this run
+/sbin/iptables-save > "${rulesfileafter}" 2>&1;
