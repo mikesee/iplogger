@@ -109,7 +109,7 @@ while read -r i; do
 		populate_list;
 done < "$newfordb";
 # get geo IP information and delete list files
-php get_geos_new.php && rm -f "$attackers" "$iplist";
+php get_geos.php && rm -f "$attackers" "$iplist";
 
 #refresh $dbfile
 get_db;
