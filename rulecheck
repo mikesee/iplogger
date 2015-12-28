@@ -75,7 +75,7 @@ fi
 
 # is it old and dated?  refresh it!
 moddate=$(stat -c %Y $dbfile);
-if [ "$(($moddate < $intervalago))" == "1" ]; then
+if (($moddate < $intervalago)); then
 		echo 'old file, make new one';
 		get_db;
 fi
@@ -93,10 +93,10 @@ while read -r i; do
 		# todo:  better variable checking, for empty string and shit too..
 		if [ -n "$linevalue" ] ; then
 				# foreach line with a number, delete that rule
-				for p in $(echo "$linevalue" | tr " " "\n") ;
+				for p in $linevalue ;
 				do
-						# bye bye
-						del_rule "${p}";
+					# bye bye
+					del_rule "${p}";
 				done
 				
 				# add a new rule for this run because we just burned the old one(s)
