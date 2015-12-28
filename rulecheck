@@ -56,6 +56,12 @@ del_rule() {
 	/sbin/iptables -D INPUT "$1";
 };
 
+# function populate_list()
+# generates the rules list
+populate_list() {
+	/sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
+};
+
 # START
 # START
 # START
@@ -64,7 +70,7 @@ del_rule() {
 
 
 # begin script, generate the list of current IPs with rules
-/sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
+populate_list;
 
 # generate the new attackers by grepping /var/log/secure for: "Failed password for (invalid user|root)"
 grep -P "$fpf (?:$userlist)" "$filesearch" | grep -oP "$ipregex" | sort -u > "$attackers";
@@ -108,7 +114,7 @@ while read -r i; do
 				add_rule "$i"
 		fi
 		# refresh the rules so line numbers are updated accordingly..
-		/sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
+		populate_list;
 done < "$newfordb";
 # get geo IP information and delete list files
 php get_geos_new.php && rm -f "$attackers" "$iplist";
