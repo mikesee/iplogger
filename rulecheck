@@ -60,17 +60,17 @@ del_rule() {
 # START
 # START
 # save iptables rules to file incase we break something this run
-/sbin/iptables-save > "${rulesfilebefore}" 2>&1;
+/sbin/iptables-save > "$rulesfilebefore" 2>&1;
 
 
 # begin script, generate the list of current IPs with rules
 /sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
 
 # generate the new attackers by grepping /var/log/secure for: "Failed password for (invalid user|root)"
-grep -P "${fpf} (?:${userlist})" "${filesearch}" | grep -oP "${ipregex}" | sort -u > "${attackers}";
+grep -P "$fpf (?:$userlist)" "$filesearch" | grep -oP "$ipregex" | sort -u > "$attackers";
 
 # got a db? if not, get one!
-if [ ! -e "${dbfile}" ]; then
+if [ ! -e "$dbfile" ]; then
         echo 'no file, create it';
         get_db;
 fi
@@ -83,7 +83,7 @@ if [ "${$moddate \< $intervalago}" == 1 ]; then
 fi
 
 # save only the new attackers that are not in the DB already
-awk 'NR==FNR {d[$0];next} ! ($0 in d) {print}' "${dbfile}" "${attackers}" > "${newfordb}";
+awk 'NR==FNR {d[$0];next} ! ($0 in d) {print}' "$dbfile" "$attackers" > "$newfordb";
 
 # loop through the new attackers, and delete any old rules and add a new one
 # todo: improve efficiency at all?
@@ -95,27 +95,26 @@ while read -r i; do
 		# todo:  better variable checking, for empty string and shit too..
         if [ -n "$linevalue" ] ; then
 				# foreach line with a number, delete that rule
-                for p in $(echo "${linevalue}" | tr " " "\n") ;
+                for p in $(echo "$linevalue" | tr " " "\n") ;
                 do
 						# bye bye
-                        echo "/sbin/iptables -D INPUT ${p}";
                         del_rule "${p}";
                 done
 				
 				# add a new rule for this run because we just burned the old one(s)
-				add_rule "${i}"
+				add_rule "$i"
         else
 				# add a new rule since there wasn't any
-				add_rule "${i}"
+				add_rule "$i"
         fi
 		# refresh the rules so line numbers are updated accordingly..
         /sbin/iptables -L INPUT -n --line-numbers | grep -vP "$randstr" > "$iplist";
-done < "${newfordb}";
+done < "$newfordb";
 # get geo IP information and delete list files
-php get_geos_new.php && rm -f "${attackers}" "${iplist}";
+php get_geos.php && rm -f "$attackers" "$iplist";
 
 #refresh $dbfile
 get_db;
 
 # save iptables rules to file incase we broke something this run
-/sbin/iptables-save > "${rulesfileafter}" 2>&1;
+/sbin/iptables-save > "$rulesfileafter" 2>&1;
