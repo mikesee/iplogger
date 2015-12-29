@@ -92,18 +92,18 @@ while read -r i; do
 	# if the line isn't null
 	# todo:  better variable checking, for empty string and shit too..
 	if [ -n "$linevalue" ] ; then
-			# foreach line with a number, delete that rule
-			for p in $linevalue ;
-			do
-				# bye bye
-				del_rule "${p}";
-			done
-			
-			# add a new rule for this run because we just burned the old one(s)
-			add_rule "$i"
+		# foreach line with a number, delete that rule
+		for p in $linevalue ;
+		do
+			# bye bye
+			del_rule "${p}";
+		done
+		
+		# add a new rule for this run because we just burned the old one(s)
+		add_rule "$i"
 	else
-			# add a new rule since there wasn't any
-			add_rule "$i"
+		# add a new rule since there wasn't any
+		add_rule "$i"
 	fi
 	# refresh the rules so line numbers are updated accordingly..
 	populate_list;
