@@ -1,18 +1,21 @@
 <?php
+// this is a comment
 function getip($i = 0) {
         $ips = serverips();
         return (array_key_exists($ips,$i) && $i > 0 ? $ips[$i] : $ips[0]);
 }
+// this is another comment
 function serverips() {
         $ipv4s = `ip -4 addr | grep -oP "([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})" | sed '/^127.0.0.1$/d;' | sort -u`;
         $ips = explode(',',$ipv4s);
         return $ips;
 }
+// and another
 function randomip() {
         $ips = serverips();
         return $ips[array_rand($ips)];
 }
-
+// yet another
 function jsonrequest($url, $ip = NULL) {
 
         $iptouse = is_null($ip) ? randomip() : $ip;
