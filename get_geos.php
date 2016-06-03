@@ -67,7 +67,7 @@ try {
         }
         $pdo = NULL;
 } catch(PDOException $e) {
-        var_dump($e);// echo $e->getMessage();
+        var_dump($e);
 }
 $pdo = NULL;
 unlink($file);
