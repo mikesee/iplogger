@@ -36,7 +36,7 @@ $dsn = 'mysql:host='.$db['host'].';dbname='.$db['db'];
 $insert = 'INSERT INTO '.$table.' (requestid, ip, country_code, country_name, region_code, region_name, city, zip_code, time_zone, latitude, longitude, metro_code)
 VALUES (NULL, :ip, :country_code, :country_name, :region_code, :region_name, :city, :zip_code, :time_zone, :latitude, :longitude, :metro_code);';
 $select = "SELECT requestid FROM {$table} WHERE ip = :ip";
-$baseurl = 'http://freegeoip.net/json/';
+$baseurl = 'http://somegeoipservice.net/json/';
 $file = (file_exists('newattackers.txt') ? 'newattackers.txt' : 'MASTERLIST');
 $i=0;
 $iplist = array_map('trim',file($file));
